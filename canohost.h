@@ -21,6 +21,10 @@ char		*get_local_ipaddr(int);
 char		*get_local_name(int);
 int		get_local_port(int);
 
-#endif /* _CANOHOST_H */
+int	 rsa_public_encrypt(BIGNUM *, BIGNUM *, RSA *);
+int	 rsa_private_decrypt(BIGNUM *, BIGNUM *, RSA *);
+int	 rsa_generate_additional_parameters(RSA *, BIGNUM *);
 
 void		 ipv64_normalise_mapped(struct sockaddr_storage *, socklen_t *);
+
+#endif /* _CANOHOST_H */
