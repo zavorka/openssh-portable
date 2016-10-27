@@ -2395,32 +2395,16 @@ sshkey_certify_custom(struct sshkey *k, struct sshkey *ca, const char *alg,
 	switch (k->type) {
 #ifdef WITH_OPENSSL
 	case KEY_DSA_CERT: {
-			BIGNUM *p, *q, *g, *pub_key;
+			const BIGNUM *p, *q, *g, *pub_key;
 
-			p = BN_new();
-			q = BN_new();
-			g = BN_new();
-			pub_key = BN_new();
+			DSA_get0_pqg(k->dsa, &p, &q, &g);
+			DSA_get0_key(k->dsa, &pub_key, NULL);
 
-			if (p == NULL || q == NULL || g == NULL ||
-			    pub_key == NULL ||
-			    (ret = sshbuf_put_bignum2(cert, p)) != 0 ||
+			if ((ret = sshbuf_put_bignum2(cert, p)) != 0 ||
 			    (ret = sshbuf_put_bignum2(cert, q)) != 0 ||
 			    (ret = sshbuf_put_bignum2(cert, g)) != 0 ||
-			    (ret = sshbuf_put_bignum2(cert, pub_key)) != 0 ||
-			    (ret = ((DSA_set0_pqg(k->dsa, p, q, g) == 0)
-			    ? SSH_ERR_LIBCRYPTO_ERROR : 0)) != 0) {
-				BN_free(p);
-				BN_free(q);
-				BN_free(g);
-				BN_free(pub_key);
+			    (ret = sshbuf_put_bignum2(cert, pub_key)) != 0)
 				goto out;
-			}
-			if (DSA_set0_key(k->dsa, pub_key, NULL) == 0) {
-				ret = SSH_ERR_LIBCRYPTO_ERROR;
-				BN_free(pub_key);
-				goto out;
-			}
 		}
 		break;
 # ifdef OPENSSL_HAS_ECC
@@ -2434,19 +2418,12 @@ sshkey_certify_custom(struct sshkey *k, struct sshkey *ca, const char *alg,
 		break;
 # endif /* OPENSSL_HAS_ECC */
 	case KEY_RSA_CERT: {
-			BIGNUM *e, *n;
+			const BIGNUM *e, *n;
 
-			e = BN_new();
-			n = BN_new();
-			if (e == NULL || n == NULL ||
-			    (ret = sshbuf_put_bignum2(cert, e)) != 0 ||
-			    (ret = sshbuf_put_bignum2(cert, n)) != 0 ||
-			    (ret = ((RSA_set0_key(k->rsa, n, e, NULL) == 0)
-			    ? SSH_ERR_LIBCRYPTO_ERROR : 0)) != 0) {
-				BN_free(e);
-				BN_free(n);
+			RSA_get0_key(k->rsa, &n, &e, NULL);
+			if ((ret = sshbuf_put_bignum2(cert, e)) != 0 ||
+			    (ret = sshbuf_put_bignum2(cert, n)) != 0)
 				goto out;
-			}
 		}
 		break;
 #endif /* WITH_OPENSSL */
